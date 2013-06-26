@@ -25,9 +25,7 @@ _checkout() {
     _git_checkout "$dest"
     cd "$dest"
     chmod 766 ./autogen.sh
-    LIBVA_DEPS_LIBS=no LIBVA_DEPS_CFLAGS=no ./autogen.sh
-    cd debian.upstream
-    make
+    NOCONFIGURE=1 ./autogen.sh
 }
 
 _deb_dir() {
@@ -35,8 +33,17 @@ _deb_dir() {
     
     if [ ! -d "$deb_dir" ]
     then
-        cp -r "$1/debian.upstream" "$deb_dir"
+        local tmp_dir="$BUILD_DIR/tmp"
+        mkdir "$tmp_dir"
+        _git_checkout "$tmp_dir" 1>&2
+        cd "$tmp_dir"
+        chmod 766 ./autogen.sh
+        DRM_CFLAGS=1 DRM_LIBS=1 LIBVA_DEPS_CFLAGS=1 LIBVA_DEPS_LIBS=1 ./autogen.sh 1>&2
+        cd debian.upstream
+        make 1>&2
+        cp -r "$tmp_dir/debian.upstream" "$deb_dir"
         cp -r "$DIR/debian"/* "$deb_dir"
+        rm -rf "$tmp_dir"
     fi
     
     echo "$deb_dir"
